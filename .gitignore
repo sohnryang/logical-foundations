@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/coq
-# Edit at https://www.toptal.com/developers/gitignore?templates=coq
+# Created by https://www.toptal.com/developers/gitignore/api/ocaml,coq
+# Edit at https://www.toptal.com/developers/gitignore?templates=ocaml,coq
 
 ### Coq ###
 .*.aux
@@ -48,5 +48,27 @@ time-of-build-before.log
 time-of-build-both.log
 time-of-build-pretty.log
 
-# End of https://www.toptal.com/developers/gitignore/api/coq
+### OCaml ###
+*.annot
+
+# ocamlbuild working directory
+_build/
+
+# ocamlbuild targets
+*.byte
+
+# oasis generated files
+setup.data
+setup.log
+
+# Merlin configuring file for Vim and Emacs
+.merlin
+
+# Dune generated files
+*.install
+
+# Local OPAM switch
+_opam/
+
+# End of https://www.toptal.com/developers/gitignore/api/ocaml,coq
 
