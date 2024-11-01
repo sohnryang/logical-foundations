@@ -853,7 +853,7 @@ Proof.
           - simpl. reflexivity.
           - apply IHk. }
         rewrite H' in H. discriminate H.
-      * exists x'. rewrite Plus.plus_Snm_nSm_stt. apply IHn'.
+      * exists x'. rewrite plus_Sn_m. rewrite plus_n_Sm. apply IHn'.
 Qed.
 
 Theorem plus_exists_leb : forall n m, (exists x, m = n+x) -> n <=? m = true.
