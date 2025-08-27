@@ -2974,7 +2974,35 @@ Qed.
     [Prop]'s naturally using [intro] and [destruct]. *)
 Lemma derive_corr : derives derive.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold derives. intros a re. unfold is_der. intros s. split.
+  - generalize dependent s. induction re as [
+      |
+      |
+      | re1 IH1 re2 IH2
+      | re1 IH1 re2 IH2
+      | re IH
+    ].
+    + intros s H. inversion H.
+    + intros s H. inversion H.
+    + intros s H. inversion H. simpl. rewrite eqb_refl. apply MEmpty.
+    + intros s H. simpl. apply app_ne in H.
+      destruct H as [[Hmatch1 Hmatch2] | [s1 [s2 [Hconcat [Hmatch1 Hmatch2]]]]].
+      * destruct (match_eps_refl re1) as [_ | NME]. apply MUnionL.
+        apply (MApp [] re1 s (derive a re2)). apply Hmatch1. apply IH2.
+        apply Hmatch2. apply NME in Hmatch1. destruct Hmatch1.
+      * assert (H: s =~ App (derive a re1) re2).
+        { apply IH1 in Hmatch1. rewrite Hconcat.
+          apply (MApp s1 (derive a re1) s2 re2). apply Hmatch1. apply Hmatch2. }
+        destruct (match_eps_refl re1). apply MUnionR. apply H. apply H.
+    + intros s H. simpl. apply union_disj in H. destruct H as [Hmatch | Hmatch].
+      * apply IH1 in Hmatch. apply MUnionL. apply Hmatch.
+      * apply IH2 in Hmatch. apply MUnionR. apply Hmatch.
+    + intros s H. apply star_ne in H.
+      destruct H as [s1 [s2 [Hconcat [Hmatch1 Hmatch2]]]]. apply IH in Hmatch1.
+      simpl. rewrite Hconcat. apply (MApp s1 (derive a re) s2 (Star re)).
+      apply Hmatch1. apply Hmatch2.
+  - admit.
+Admitted.
 (** [] *)
 
 (** We'll define the regex matcher using [derive]. However, the only
