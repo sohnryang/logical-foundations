@@ -2886,7 +2886,7 @@ Fixpoint derive (a : ascii) (re : reg_exp ascii) : reg_exp ascii :=
   | EmptyStr => EmptySet
   | Char x => if eqb a x then EmptyStr else EmptySet
   | App r1 r2 => if match_eps r1
-    then Union (App r1 (derive a r2)) (App (derive a r1) r2)
+    then Union (derive a r2) (App (derive a r1) r2)
     else App (derive a r1) r2
   | Union r1 r2 => Union (derive a r1) (derive a r2)
   | Star r => App (derive a r) (Star r)
@@ -2987,8 +2987,7 @@ Proof.
     + intros s H. inversion H. simpl. rewrite eqb_refl. apply MEmpty.
     + intros s H. simpl. apply app_ne in H.
       destruct H as [[Hmatch1 Hmatch2] | [s1 [s2 [Hconcat [Hmatch1 Hmatch2]]]]].
-      * destruct (match_eps_refl re1) as [_ | NME]. apply MUnionL.
-        apply (MApp [] re1 s (derive a re2)). apply Hmatch1. apply IH2.
+      * destruct (match_eps_refl re1) as [_ | NME]. apply MUnionL. apply IH2.
         apply Hmatch2. apply NME in Hmatch1. destruct Hmatch1.
       * assert (H: s =~ App (derive a re1) re2).
         { apply IH1 in Hmatch1. rewrite Hconcat.
@@ -3001,8 +3000,38 @@ Proof.
       destruct H as [s1 [s2 [Hconcat [Hmatch1 Hmatch2]]]]. apply IH in Hmatch1.
       simpl. rewrite Hconcat. apply (MApp s1 (derive a re) s2 (Star re)).
       apply Hmatch1. apply Hmatch2.
-  - admit.
-Admitted.
+  - generalize dependent s. induction re as [
+      |
+      |
+      | re1 IH1 re2 IH2
+      | re1 IH1 re2 IH2
+      | re IH
+    ].
+    + intros s H. simpl in H. apply null_matches_none in H. destruct H.
+    + intros s H. simpl in H. apply null_matches_none in H. destruct H.
+    + intros s H. simpl in H. destruct (eqb_spec a t) as [EQ | NEQ].
+      * rewrite <- EQ. apply char_eps_suffix. apply empty_matches_eps in H.
+        apply H.
+      * apply null_matches_none in H. destruct H.
+    + intros s H. simpl in H.
+      assert (Hhead: s =~ App (derive a re1) re2 -> a :: s =~ App re1 re2).
+      { intros H'. apply app_exists in H'.
+        destruct H' as [s1 [s2 [Hconcat [Hmatch1 Hmatch2]]]]. apply app_ne.
+        right. exists s1. exists s2. split. apply Hconcat. split. apply IH1.
+        apply Hmatch1. apply Hmatch2. }
+      destruct (match_eps_refl re1) as [ME | NME].
+      * apply union_disj in H. destruct H as [H | H].
+        -- apply app_ne. left. split. apply ME. apply IH2. apply H.
+        -- apply Hhead. apply H.
+      * apply Hhead. apply H.
+    + intros s H. simpl in H. apply union_disj in H. destruct H as [H | H].
+      * apply MUnionL. apply IH1. apply H.
+      * apply MUnionR. apply IH2. apply H.
+    + intros s H. simpl in H. apply app_exists in H.
+      destruct H as [s1 [s2 [Hconcat [Hmatch1 Hmatch2]]]]. rewrite Hconcat.
+      rewrite <- cons_app_equals_app_cons.
+      apply (MStarApp (a :: s1) s2 re (IH s1 Hmatch1) Hmatch2).
+Qed.
 (** [] *)
 
 (** We'll define the regex matcher using [derive]. However, the only
@@ -3019,8 +3048,11 @@ Definition matches_regex m : Prop :=
 
     Complete the definition of [regex_match] so that it matches
     regexes. *)
-Fixpoint regex_match (s : string) (re : reg_exp ascii) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint regex_match (s : string) (re : reg_exp ascii) : bool :=
+  match s with
+  | [] => match_eps re
+  | a :: s' => regex_match s' (derive a re)
+  end.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (regex_match_correct)
@@ -3038,7 +3070,16 @@ Fixpoint regex_match (s : string) (re : reg_exp ascii) : bool
     [s =~ derive x re], and vice versa. *)
 Theorem regex_match_correct : matches_regex regex_match.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold matches_regex. intros s re. apply iff_reflect. split.
+  - generalize dependent re. induction s as [| a s' IH].
+    + intros re H. simpl. destruct (match_eps_refl re) as [_ | NME].
+      reflexivity. apply NME in H. destruct H.
+    + intros re H. simpl. apply IH. apply derive_corr. apply H.
+  - generalize dependent re. induction s as [| a s' IH].
+    + intros re H. simpl in H. destruct (match_eps_refl re) as [ME | _].
+      apply ME. discriminate H.
+    + intros re H. simpl in H. apply IH in H. apply derive_corr. apply H.
+Qed.
 (** [] *)
 
 (* 2023-03-25 11:11 *)
