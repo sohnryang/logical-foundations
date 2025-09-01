@@ -36,6 +36,7 @@ From Coq Require Import Logic.FunctionalExtensionality.
 From Coq Require Import Lists.List.
 Import ListNotations.
 Set Default Goal Selector "!".
+Print Logic.FunctionalExtensionality.
 
 (** Documentation for the standard library can be found at
     https://coq.inria.fr/library/.
@@ -188,7 +189,8 @@ Proof. reflexivity. Qed.
 Lemma t_apply_empty : forall (A : Type) (x : string) (v : A),
   (_ !-> v) x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A x v. unfold t_empty. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (t_update_eq)
@@ -200,7 +202,8 @@ Proof.
 Lemma t_update_eq : forall (A : Type) (m : total_map A) x v,
   (x !-> v ; m) x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m x v. unfold t_update. rewrite String.eqb_refl. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (t_update_neq)
@@ -213,7 +216,11 @@ Theorem t_update_neq : forall (A : Type) (m : total_map A) x1 x2 v,
   x1 <> x2 ->
   (x1 !-> v ; m) x2 = m x2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m x1 x2 v H. unfold t_update.
+  destruct (String.eqb_spec x1 x2) as [EQ | NEQ].
+  - apply H in EQ. destruct EQ.
+  - reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (t_update_shadow)
@@ -227,7 +234,12 @@ Proof.
 Lemma t_update_shadow : forall (A : Type) (m : total_map A) x v1 v2,
   (x !-> v2 ; x !-> v1 ; m) = (x !-> v2 ; m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m x v1 v2. apply functional_extensionality. intros x'.
+  destruct (String.eqb_spec x x') as [EQ | NEQ].
+  - rewrite EQ. rewrite t_update_eq. rewrite t_update_eq. reflexivity.
+  - rewrite (t_update_neq _ _ _ _ _ NEQ). rewrite (t_update_neq _ _ _ _ _ NEQ).
+    rewrite (t_update_neq _ _ _ _ _ NEQ). reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (t_update_same)
@@ -244,7 +256,11 @@ Proof.
 Theorem t_update_same : forall (A : Type) (m : total_map A) x,
   (x !-> m x ; m) = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m x. apply functional_extensionality. intros x'.
+  destruct (eqb_spec x x') as [EQ | NEQ].
+  - rewrite EQ. apply t_update_eq.
+  - apply t_update_neq. apply NEQ.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, especially useful (t_update_permute)
@@ -260,7 +276,17 @@ Theorem t_update_permute : forall (A : Type) (m : total_map A)
   =
   (x2 !-> v2 ; x1 !-> v1 ; m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m v1 v2 x1 x2 H. apply functional_extensionality. intros x.
+  destruct (eqb_spec x1 x) as [EQ1 | NEQ1].
+  - rewrite EQ1. rewrite t_update_eq. destruct (eqb_spec x2 x) as [EQ2 | NEQ2].
+    + rewrite <- EQ1 in EQ2. apply H in EQ2. destruct EQ2.
+    + rewrite (t_update_neq _ _ x2 _ _ NEQ2). rewrite t_update_eq. reflexivity.
+  - rewrite (t_update_neq _ _ x1 _ _ NEQ1).
+    destruct (eqb_spec x2 x) as [EQ2 | NEQ2].
+      * rewrite EQ2. rewrite t_update_eq. rewrite t_update_eq. reflexivity.
+      * repeat rewrite (t_update_neq _ _ x2 _ _ NEQ2).
+        rewrite (t_update_neq _ _ _ _ _ NEQ1). reflexivity.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
